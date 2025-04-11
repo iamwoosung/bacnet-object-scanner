@@ -5,16 +5,16 @@ namespace BACnetScanner.Models
 {
     public class Device
     {
-        public Device(BacnetAddress address, uint device_id, bool is_check, List<Tag> tags)
+        public Device(BacnetAddress address, uint deviceId)
         {
             this.address = address;
-            this.device_id = device_id;
-            this.is_check = is_check;
-            this.tags = tags;
+            this.deviceId = deviceId;
+            this.isCheck = false;
+            this.tags = new List<Tag>();
         }
         public BacnetAddress address {  get; set; }
-        public uint device_id { get; set; }
-        public bool is_check { get; set; }
+        public uint deviceId { get; set; }
+        public bool isCheck { get; set; }
         public List<Tag> tags { get; set; }
     }
 }
