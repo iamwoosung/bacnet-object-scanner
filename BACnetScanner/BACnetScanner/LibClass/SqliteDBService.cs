@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.IO;
 
 namespace BACnetScanner.LibClass
@@ -10,6 +9,9 @@ namespace BACnetScanner.LibClass
 
         private static string dirPath = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName;
         private static string dbPath = Path.Combine(dirPath, "point.db");
+
+        private static LogControl logControl = new LogControl();
+
 
         /// <summary>
         /// DB Init 
@@ -59,7 +61,7 @@ namespace BACnetScanner.LibClass
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                logControl.LogWrite("fnDBInit", string.Format("Error: {0}", e.Message));
             }
         }
 
@@ -96,11 +98,11 @@ namespace BACnetScanner.LibClass
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                logControl.LogWrite("fnSelectDeviceNo", string.Format("Error: {0}", e.Message));
             }
             return -1;
         }
-        
+
         /// <summary>
         /// 디바이스 DB 삽입
         /// </summary>
@@ -155,7 +157,7 @@ namespace BACnetScanner.LibClass
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                logControl.LogWrite("fnExecuteNonQuery", string.Format("Error: {0}{1}query: {2}", e.Message, "\n", query));
             }
         }
     }

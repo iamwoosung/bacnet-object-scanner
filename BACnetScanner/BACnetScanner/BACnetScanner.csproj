@@ -99,6 +99,7 @@
   <ItemGroup>
     <Compile Include="LibClass\LogControl.cs" />
     <Compile Include="LibClass\SqliteDBService.cs" />
+    <Compile Include="LibClass\Utils.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Models\Tag.cs" />
     <Compile Include="Program.cs" />

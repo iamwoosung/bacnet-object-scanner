@@ -14,6 +14,8 @@ namespace BACnetScanner
     {
         private static DateTime handlerTime = DateTime.Now;
         private static bool isRunning = true;
+        private static int port = 0xBAC0;
+        private static string localEndPointIP = string.Empty;
 
         private static SqliteDBService dbService = new SqliteDBService();
         private static LogControl logControl = new LogControl();
@@ -42,9 +44,31 @@ namespace BACnetScanner
 
         static void Main(string[] args)
         {
+            fnArgumentsParser(args);
             Trace.Listeners.Add(new ConsoleTraceListener());
             dbService.fnDBInit();
             fnStartActivity();
+        }
+
+        /// <summary>
+        /// 대상 네트워크 정보(IP, 포트) 입력 받을 수 있도록 수정
+        /// </summary>
+        /// <param name="args">네트워크 정보[ 0: IP, 1: port ]</param>
+        private static void fnArgumentsParser(string[] args)
+        {
+            if (args.Length == 0 || string.IsNullOrEmpty(args[0]))
+            {
+                return;
+            }
+            string ip = Utils.fnCheckIsIP(args[0]);
+            localEndPointIP = ip == null ? localEndPointIP : ip;
+
+            if (args.Length <= 1 || string.IsNullOrEmpty(args[1]))
+            {
+                return;
+            }
+            int p = Utils.fnCheckIsNumber(args[1]);
+            port = p == -1 ? port : p;
         }
 
         /// <summary>
@@ -52,10 +76,12 @@ namespace BACnetScanner
         /// </summary>
         private static void fnStartActivity()
         {
-            bacnet_client = new BacnetClient(new BacnetIpUdpProtocolTransport(port: 0xBAC0, localEndpointIp: ""));
+            bacnet_client = new BacnetClient(new BacnetIpUdpProtocolTransport(port: port, localEndpointIp: localEndPointIP));
             bacnet_client.OnIam += new BacnetClient.IamHandler(handler_OnIam);
             bacnet_client.Start();
             bacnet_client.WhoIs();
+
+            logControl.LogWrite("fnStartActivity", string.Format("BACnet client start {0}, {1}", localEndPointIP, port));
 
             while (isRunning)
             {
@@ -70,6 +96,7 @@ namespace BACnetScanner
                 fnReadTagsFromDevice();
                 Thread.Sleep(1000);
             }
+            logControl.LogWrite("fnStartActivity", "Normal shutdown(event handler not present)");
         }
 
         /// <summary>
@@ -92,7 +119,7 @@ namespace BACnetScanner
                 // IP 네트워크로 등록된 디바이스만 검색
                 if (address.type != BacnetAddressTypes.IP)
                 {
-                    return; 
+                    return;
                 }
                 // 동일 어드레스의 디바이스가 기등록된 상태면 무시
                 else if (bacnet_devices.Any(device => device.address.Equals(address) && device.deviceId == device_id))
@@ -101,6 +128,7 @@ namespace BACnetScanner
                 }
 
                 bacnet_devices.Add(new Device(address, device_id));
+                logControl.LogWrite("handler_OnIam", string.Format("Add device: count {0}, address {1}, deviceId {2}", bacnet_devices.Count, address.ToString(), device_id));
             }
         }
 
@@ -163,11 +191,13 @@ namespace BACnetScanner
                             )
                         );
                     }
+
+                    logControl.LogWrite("fnReadTagsFromDevice", string.Format("Success read tag from {0}, {1}", device.address.ToString(), device.deviceId));
                     device.isCheck = true;
                 }
                 catch (Exception e) 
-                { 
-                    Debug.WriteLine(e);
+                {
+                    logControl.LogWrite("fnReadTagsFromDevice", string.Format("Error: {0}", e.Message));
                     continue;
                 }
                 fnSaveObjectToDB(device);
